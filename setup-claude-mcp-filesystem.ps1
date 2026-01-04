@@ -56,10 +56,23 @@ if ($nodeVersion) {
     try {
         # Use winget to install Node.js
         winget install OpenJS.NodeJS -e --accept-package-agreements --accept-source-agreements
-        $nodeVersion = node --version
-        Write-Success "✓ Node.js installed successfully: $nodeVersion"
+        
+        # Refresh PATH environment variable to pick up the new Node.js installation
+        Write-Info "Refreshing environment variables..."
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        
+        # Wait a moment for the system to fully register the installation
+        Start-Sleep -Seconds 3
+        
+        $nodeVersion = node --version 2>$null
+        if ($nodeVersion) {
+            Write-Success "✓ Node.js installed successfully: $nodeVersion"
+        } else {
+            throw "Node.js installed but could not verify installation. Please restart PowerShell and try again."
+        }
     } catch {
-        Write-Error "Failed to install Node.js. Please install manually from https://nodejs.org/"
+        Write-Error "Failed to install Node.js. Error: $_"
+        Write-Error "Please manually install from https://nodejs.org/ or restart PowerShell and run this script again."
         exit 1
     }
 }
